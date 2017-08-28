@@ -16,6 +16,7 @@ namespace client_txt
         public static TcpClient client;
         public static string hostname = "172.17.1.168";
         public static Int32 port = 13000;
+        public static Byte[] data=new Byte[256];
         //symulator piszacej osoby ktora wylaczy w cywilizowany sposob aplikacje krzyzyk
         static void ForceDisc()
         {
@@ -27,29 +28,34 @@ namespace client_txt
         }
         static void Main(string[] args)
         {
-            //Thread sendPing = new Thread(() =>
-            //{
-            //    Thread.Sleep(1000);
-            //    if (stream != null)
-            //    {
-            //        lock (client)
-            //        {
-            //            lock (stream)
-            //            {
-            //                Connect(client, hostname, "");
-            //            }
-            //        }
-            //    }
-            //});
-            //sendPing.Priority = ThreadPriority.Highest;
-            //sendPing.Start();
-            
             //Thread forceDisc = new Thread(ForceDisc);
             //forceDisc.Start();
+            Action a = () =>
+            {
+                while (true)
+                {
+                    int i = 0;
+                    if (data != null)
+                    {
+                        if (stream!= null && stream.DataAvailable == true && data != null)
+                        {
+                            Thread.Sleep(500);
+                            while ((i = stream.Read(data, 0, data.Length)) != 0)  //gdy pojawi sie jakas wiadomosc
+                            {
+                                
+                                Int32 bytes = stream.Read(data, 0, data.Length);
+                                string responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+                                Console.WriteLine("Wiadomosc Panie: " + responseData);
+                            }
+                        }
+                    }
+                }
+            };
+            Task permaCheck = new Task(a);
+            permaCheck.Start();
             try
             {
                 client = new TcpClient(hostname, port);
-                DateTime text;
                 string socketip = client.Client.LocalEndPoint.ToString();
 
                 //dodatek do obsluzania wyjscia
@@ -73,7 +79,7 @@ namespace client_txt
                 Thread.Sleep(2000);
                 Environment.Exit(0);
             }
-            
+
         }
         //dodatek do obslugi wyjscia
         //https://stackoverflow.com/questions/4646827/on-exit-for-a-console-application
@@ -101,35 +107,34 @@ namespace client_txt
             try
             {
                 // Translate the passed message into ASCII and store it as a Byte array.
-                Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                data = System.Text.Encoding.ASCII.GetBytes(message);
 
                 // Get a client stream for reading and writing.
                 //  Stream stream = client.GetStream();
 
                 stream = client.GetStream();
-                stream.Flush();
                 // Send the message to the connected TcpServer. 
                 stream.Write(data, 0, data.Length);
-
+                //stream.Flush();
                 Console.WriteLine("Sent: {0}", message);
 
                 // Receive the TcpServer.response.
 
                 // Buffer to store the response bytes.
-                data = new Byte[256];
+                //data = new Byte[256];
 
-                // String to store the response ASCII representation.
-                String responseData = String.Empty;
+                //// String to store the response ASCII representation.
+                //String responseData = String.Empty;
 
-                // Read the first batch of the TcpServer response bytes.
-                Int32 bytes = stream.Read(data, 0, data.Length);
-                if (bytes != 0)
-                {
-                    Console.WriteLine("Otrzymalem wiadomosc");
-                }
-                responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-                Console.WriteLine("Received: {0}", responseData);
-                
+                //// Read the first batch of the TcpServer response bytes.
+                //Int32 bytes = stream.Read(data, 0, data.Length);
+                //if (bytes != 0)
+                //{
+                //    Console.WriteLine("Otrzymalem wiadomosc");
+                //}
+                //responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+                //Console.WriteLine("Received: {0}", responseData);
+
                 // Close everything.
                 //stream.Close();
                 //client.Close();
